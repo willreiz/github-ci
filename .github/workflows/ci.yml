@@ -33,3 +33,39 @@ jobs:
           bootstrap: vendor/autoload.php
           configuration: test/phpunit.xml
           args: --coverage-text
+
+      # this job will deploy our code to our EC2 instance
+  deploy:
+    name: Deploy to EC2 on master branch push
+    runs-on: ubuntu-latest
+    needs: build-test  # This ensures the "deploy" job depends on "build-test" job
+    if: success()     # This ensures "deploy" job runs only if "build-test" is successful
+    steps:
+      - name: Checkout the files
+        uses: actions/checkout@v3
+        
+      - name: Deploy to Server
+        # this actions uses the rsync command to copy files from the runner to the ec2 server
+        uses: easingthemes/ssh-deploy@main
+        # the runner needs to connect to our EC2 server so its needs to know the host, username, and key file so it can connect. It is using the values we defined as secrets in the previous step
+        env: 
+          SSH_PRIVATE_KEY: ${{secrets.EC2_SSH_KEY}}
+          REMOTE_HOST: ${{secrets.REMOTE_HOST}}
+          REMOTE_USER: ${{secrets.REMOTE_USER}}
+          TARGET: ${{secrets.TARGET}}
+  # this job will run composer install on our EC2 instance
+  composer:
+    name: Run composer install on EC2 instance
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: success()
+    steps:
+      - name: execute composer install
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{secrets.REMOTE_HOST}}
+          username: ${{secrets.REMOTE_USER}}
+          key: ${{secrets.EC2_SSH_KEY}}
+          script: |
+            cd ${{secrets.TARGET}}
+            composer install
