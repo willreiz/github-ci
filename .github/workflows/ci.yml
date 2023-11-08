@@ -53,7 +53,7 @@ jobs:
           REMOTE_HOST: ${{secrets.REMOTE_HOST}}
           REMOTE_USER: ${{secrets.REMOTE_USER}}
           TARGET: ${{secrets.TARGET}}
-  # this job will run composer install on our EC2 instance Trial 2
+  # this job will run composer install on our EC2 instance Trial #
   composer:
     name: Run composer install on EC2 instance
     runs-on: ubuntu-latest
